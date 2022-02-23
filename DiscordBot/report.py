@@ -108,7 +108,7 @@ class Report:
             content = message.content.strip() # remove whitespace
             if content == 'yes' or content == 'no':
                 self.threat_level = ThreatLevel.IMMINENT if content == 'yes' else ThreatLevel.NON_IMMINENT
-
+                self.state = State.REPORT_COMPLETE
                 return ["Thank you for letting us know, we will look into this as soon as possible and" + \
                     " will notify the relevant authorities if necessary."]
             else: 

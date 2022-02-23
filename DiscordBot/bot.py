@@ -6,7 +6,7 @@ import json
 import logging
 import re
 import requests
-from report import Report
+from report import Report, ThreatLevel
 
 # Set up logging to the console
 logger = logging.getLogger('discord')
@@ -96,11 +96,14 @@ class ModBot(discord.Client):
         # If the report is complete or cancelled, remove it from our map and forward it 
         # to the mod channel
         if self.reports[author_id].report_complete():
-            mod_channel = self.mod_channels[915746011757019217]
-            offending_message = self.reports[author_id].message
-            forward_message = f"`{message.author.name}` reported this message:\n" 
-            forward_message += "```" + offending_message.author + ": " + offending_message.content + "```\n"
-            await mod_channel.send(forward_message)
+            if self.reports[author_id].threat_level != ThreatLevel.NOT_HARM:
+                mod_channel = self.mod_channels[915746011757019217]
+                offending_message = self.reports[author_id].message
+                forward_message = f"`{message.author.name}` reported this message as possibly containing violence:\n" 
+                forward_message += "```" + offending_message.author + ": " + offending_message.content + "```\n"
+                forward_message += "They rated the treat level as "
+                forward_message += "**not imminent**\n" if self.reports[author_id].threat_level == ThreatLevel.NON_IMMINENT else "**imminent**\n"
+                await mod_channel.send(forward_message)
             self.reports.pop(author_id)
 
     def eval_text(self, message):
