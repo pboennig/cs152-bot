@@ -70,7 +70,18 @@ class Report:
             return [reply]
         
         if self.state == State.MESSAGE_IDENTIFIED:
-            return ["Oi"]
+            type_keywords = [rt.value for rt in ReportType]
+            content = message.content.strip() # remove whitespace
+            if content not in type_keywords:
+                reply = "Please make sure your response is one of "
+                reply += ", ".join([f"`{rt}`" for rt in type_keywords[:-1]]) + ", " 
+                reply += f"or `{type_keywords[-1]}`" 
+                return [reply]
+            else:
+                if content != ReportType.HARM.value:
+                    return ["Abuse type not covered in this project."]
+                else:
+                    return ["We'll look into it!"]
 
         return []
 
