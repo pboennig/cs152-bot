@@ -6,7 +6,13 @@ class State(Enum):
     REPORT_START = auto()
     AWAITING_MESSAGE = auto()
     MESSAGE_IDENTIFIED = auto()
+    HARM_REPORTED = auto()
     REPORT_COMPLETE = auto()
+
+class ThreatLevel(Enum):
+    NOT_HARM = auto()
+    NON_IMMINENT = auto()
+    IMMINENT = auto()
 
 class ReportType(Enum):
     SPAM = 'spam'
@@ -23,6 +29,7 @@ class Report:
         self.state = State.REPORT_START
         self.client = client
         self.message = None
+        self.threat_level = ThreatLevel.NOT_HARM
     
     async def handle_message(self, message):
         '''
@@ -79,10 +86,23 @@ class Report:
                 return [reply]
             else:
                 if content != ReportType.HARM.value:
+                    self.state = State.REPORT_COMPLETE
                     return ["Abuse type not covered in this project."]
                 else:
-                    return ["We'll look into it!"]
+                    self.state = State.HARM_REPORTED
+                    reply = "Do you think they will act on their intentions soon?\n"
+                    reply += "Type `yes` or `no`"
+                    return [reply]
 
+        if self.state == State.HARM_REPORTED:
+            content = message.content.strip() # remove whitespace
+            if content == 'yes' or content == 'no':
+                self.threat_level = ThreatLevel.IMMINENT if content == 'yes' else ThreatLevel.NON_IMMINENT
+
+                return ["Thank you for letting us know, we will look into this as soon as possible and" + \
+                    " will notify the relevant authorities if necessary."]
+            else: 
+                return ["Please type either `yes` or `no`"]
         return []
 
     def report_complete(self):
