@@ -72,6 +72,11 @@ class ModBot(discord.Client):
         else:
             await self.handle_dm(message)
 
+    async def on_raw_reaction_add(self, payload):
+        if payload.guild_id:
+            # only care about reactions on messages that aren't DM
+            print(payload)
+
     async def handle_dm(self, message):
         # Handle a help message
         if message.content == Report.HELP_KEYWORD:
@@ -115,12 +120,8 @@ class ModBot(discord.Client):
         if not message.channel.name == f'group-{self.group_num}':
             return
 
-        # Forward the message to the mod channel
-        mod_channel = self.mod_channels[message.guild.id]
-        await mod_channel.send(f'Forwarded message:\n{message.author.name}: "{message.content}"')
 
-        scores = self.eval_text(message)
-        await mod_channel.send(self.code_format(json.dumps(scores, indent=2)))
+
 
 
     def eval_text(self, message):
