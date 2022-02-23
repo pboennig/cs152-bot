@@ -93,21 +93,15 @@ class ModBot(discord.Client):
         for r in responses:
             await message.channel.send(r)
 
-        # If the report is complete or cancelled, remove it from our map
+        # If the report is complete or cancelled, remove it from our map and forward it 
+        # to the mod channel
         if self.reports[author_id].report_complete():
+            mod_channel = self.mod_channels[915746011757019217]
+            offending_message = self.reports[author_id].message
+            forward_message = f"`{message.author.name}` reported this message:\n" 
+            forward_message += "```" + offending_message.author + ": " + offending_message.content + "```\n"
+            await mod_channel.send(forward_message)
             self.reports.pop(author_id)
-
-    async def handle_channel_message(self, message):
-        # Only handle messages sent in the "group-#" channel
-        if not message.channel.name == f'group-{self.group_num}':
-            return
-
-        # Forward the message to the mod channel
-        mod_channel = self.mod_channels[message.guild.id]
-        await mod_channel.send(f'Forwarded message:\n{message.author.name}: "{message.content}"')
-
-        scores = self.eval_text(message)
-        await mod_channel.send(self.code_format(json.dumps(scores, indent=2)))
 
     def eval_text(self, message):
         '''

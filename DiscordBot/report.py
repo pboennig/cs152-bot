@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum, auto
 import discord
 import re
@@ -19,6 +20,12 @@ class ReportType(Enum):
     HARASSMENT = 'harassment'
     INAPPROPIATE = 'inappropiate'
     HARM = 'harm'
+
+@dataclass
+class ReportedMessage:
+    author: str
+    content: str
+
 
 class Report:
     START_KEYWORD = "report"
@@ -68,6 +75,9 @@ class Report:
 
             # Here we've found the message - it's up to you to decide what to do next!
             self.state = State.MESSAGE_IDENTIFIED
+
+            self.message = ReportedMessage(message.author.name, message.content)
+
             reply = "I found this message:" + "```" + message.author.name + ": " + message.content + "```\n"
             reply += "What do you think is wrong with this message?\n\n"
             reply += "If you think it is spam or fraud, say `" + ReportType.SPAM.value +"`\n" 
