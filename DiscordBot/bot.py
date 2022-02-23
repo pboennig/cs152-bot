@@ -110,6 +110,19 @@ class ModBot(discord.Client):
                         await mod_channel.send(response)
             self.reports.pop(author_id)
 
+    async def handle_channel_message(self, message):
+        # Only handle messages sent in the "group-#" channel
+        if not message.channel.name == f'group-{self.group_num}':
+            return
+
+        # Forward the message to the mod channel
+        mod_channel = self.mod_channels[message.guild.id]
+        await mod_channel.send(f'Forwarded message:\n{message.author.name}: "{message.content}"')
+
+        scores = self.eval_text(message)
+        await mod_channel.send(self.code_format(json.dumps(scores, indent=2)))
+
+
     def eval_text(self, message):
         '''
         Given a message, forwards the message to Perspective and returns a dictionary of scores.
