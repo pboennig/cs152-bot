@@ -1,11 +1,12 @@
 # bot.py
+from typing import Dict
 import discord
-from discord.ext import commands
 import os
 import json
 import logging
 import re
 import requests
+from mod_flow import Incident
 from report import Report, ThreatLevel
 
 # Set up logging to the console
@@ -33,6 +34,8 @@ class ModBot(discord.Client):
         self.group_num = None
         self.mod_channels = {} # Map from guild to the mod channel id for that guild
         self.reports = {} # Map from user IDs to the state of their report
+        self.incident_count = 0
+        self.incident_map: Dict[int, Incident] = {}
         self.perspective_key = key
 
     async def on_ready(self):
@@ -96,14 +99,15 @@ class ModBot(discord.Client):
         # If the report is complete or cancelled, remove it from our map and forward it 
         # to the mod channel
         if self.reports[author_id].report_complete():
-            if self.reports[author_id].threat_level != ThreatLevel.NOT_HARM:
-                mod_channel = self.mod_channels[915746011757019217]
-                offending_message = self.reports[author_id].message
-                forward_message = f"`{message.author.name}` reported this message as possibly containing violence:\n" 
-                forward_message += "```" + offending_message.author + ": " + offending_message.content + "```\n"
-                forward_message += "They rated the treat level as "
-                forward_message += "**not imminent**\n" if self.reports[author_id].threat_level == ThreatLevel.NON_IMMINENT else "**imminent**\n"
-                await mod_channel.send(forward_message)
+            r = self.reports[author_id]
+            if r.threat_level != ThreatLevel.NOT_HARM:
+                i =  Incident(self, self.incident_count, message.author, r.message, r.threat_level) 
+                self.incident_map[self.incident_count] = i 
+                self.incident_count += 1
+                responses = await i.handle_message()
+                for mod_channel in self.mod_channels.values():
+                    for response in responses:
+                        await mod_channel.send(response)
             self.reports.pop(author_id)
 
     def eval_text(self, message):
