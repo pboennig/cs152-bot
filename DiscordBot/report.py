@@ -8,6 +8,12 @@ class State(Enum):
     MESSAGE_IDENTIFIED = auto()
     REPORT_COMPLETE = auto()
 
+class ReportType(Enum):
+    SPAM = 'spam'
+    HARASSMENT = 'harassment'
+    INAPPROPIATE = 'inappropiate'
+    HARM = 'harm'
+
 class Report:
     START_KEYWORD = "report"
     CANCEL_KEYWORD = "cancel"
@@ -55,11 +61,16 @@ class Report:
 
             # Here we've found the message - it's up to you to decide what to do next!
             self.state = State.MESSAGE_IDENTIFIED
-            return ["I found this message:", "```" + message.author.name + ": " + message.content + "```", \
-                    "This is all I know how to do right now - it's up to you to build out the rest of my reporting flow!"]
+            reply = "I found this message:" + "```" + message.author.name + ": " + message.content + "```\n"
+            reply += "What do you think is wrong with this message?\n\n"
+            reply += "If you think it is spam or fraud, say `" + ReportType.SPAM.value +"`\n" 
+            reply += "If this message is harassing you or others, say `" + ReportType.HARASSMENT.value + "`\n"
+            reply += "If you think this message is inappropiate or illegal, say `" + ReportType.INAPPROPIATE.value + "`\n"
+            reply += "If you're worried the sender will do harm to themselves or others, say `" + ReportType.HARM.value + "`\n"
+            return [reply]
         
         if self.state == State.MESSAGE_IDENTIFIED:
-            return ["<insert rest of reporting flow here>"]
+            return ["Oi"]
 
         return []
 
