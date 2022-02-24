@@ -9,6 +9,7 @@ class ModState(Enum):
     AWAITING_REACT = auto()
     IMMINENT_THREAT = auto()
     NONIMMINENT_THREAT = auto()
+    ASK_IF_SHOULD_BAN = auto()
     REPORT_COMPLETE = auto()
 
 react_state_update: dict[(str, ModState), ModState] = {
@@ -16,9 +17,11 @@ react_state_update: dict[(str, ModState), ModState] = {
     (':red_exclamation_mark:', ModState.AWAITING_REACT) : ModState.NONIMMINENT_THREAT,
     (':thumbs_down:', ModState.AWAITING_REACT) : ModState.REPORT_COMPLETE,
     (':thumbs_up:', ModState.NONIMMINENT_THREAT) : ModState.REPORT_COMPLETE,
-    (':thumbs_down:', ModState.NONIMMINENT_THREAT) : ModState.REPORT_COMPLETE,
+    (':thumbs_down:', ModState.NONIMMINENT_THREAT) : ModState.ASK_IF_SHOULD_BAN,
     (':thumbs_up:', ModState.IMMINENT_THREAT) : ModState.REPORT_COMPLETE,
-    (':thumbs_down:', ModState.IMMINENT_THREAT) : ModState.REPORT_COMPLETE
+    (':thumbs_down:', ModState.IMMINENT_THREAT) : ModState.REPORT_COMPLETE,
+    (':thumbs_up:', ModState.ASK_IF_SHOULD_BAN) : ModState.REPORT_COMPLETE,
+    (':thumbs_down:', ModState.ASK_IF_SHOULD_BAN) : ModState.REPORT_COMPLETE
 }
 
 class Incident:
@@ -60,19 +63,41 @@ class Incident:
                 return [f'{self.incident_prefix}Thank you, incident closed.']
 
         elif self.state == ModState.IMMINENT_THREAT:
-            if react == ':thumbs_up:':
-                return await self.send_self_help_message()
-            elif react == ':thumbs_down:':
-                response = await self.ban_user()
-                await self.offending_message.delete()
-                return response + ['\nPlease contact the relevant authorities.']
+            if (react, self.state) in react_state_update:
+                self.state = react_state_update[(react, self.state)]
+
+                if react == ':thumbs_up:':
+                    return await self.send_self_help_message()
+                else:
+                    response = await self.ban_user()
+                    await self.offending_message.delete()
+                    return response + ['Please contact the relevant authorities. Closing the incident.']
 
         elif self.state == ModState.NONIMMINENT_THREAT:
-            if react == ':thumbs_up:':
-                return await self.send_self_help_message()
-            elif react == ':thumbs_down:':
-                return [f'Please remove the content. Ban the user if it incites violence or the user has repeatedly glorified violence']
-        
+            if (react, self.state) in react_state_update:
+                self.state = react_state_update[(react, self.state)]
+                if react == ':thumbs_up:':
+                    return await self.send_self_help_message()
+                else:
+                    response = self.incident_prefix
+                    response += 'React :thumbsup: if the message incites violence or the user has repeatedly glorified violence in order to ban the user.\n' 
+                    response += 'React :thumbsdown: in order to not ban the user.\n'
+                    response += 'The content will be removed in either case.'
+                    return [response]
+
+        elif self.state == ModState.ASK_IF_SHOULD_BAN:
+            if (react, self.state) in react_state_update:
+                self.state = react_state_update[(react, self.state)]
+                if react == ':thumbs_up:':
+                    response = await self.ban_user()
+                    await self.offending_message.delete()
+                    return response
+                else:
+                    response = 'Thank you, we are closing the incident.'
+                    await self.offending_message.delete()
+                    return [response]
+
+
 
         elif self.state == ModState.REPORT_COMPLETE:
             # If the incident is already closed, don't change anything
