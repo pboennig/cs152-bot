@@ -14,6 +14,7 @@ class ThreatLevel(Enum):
     NOT_HARM = auto()
     NON_IMMINENT = auto()
     IMMINENT = auto()
+    AUTO_REPORT = auto()
 
 class ReportType(Enum):
     SPAM = 'spam'

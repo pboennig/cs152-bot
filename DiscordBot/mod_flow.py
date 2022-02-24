@@ -30,10 +30,17 @@ class Incident:
     async def handle_message(self):
         assert self.state == ModState.FLOW_START
         forward_message = self.incident_prefix
-        forward_message += f"`{self.reporter.name}` reported this message as possibly containing violence:\n" 
+
+        if self.reporter is not None:
+            forward_message += self.reporter.name 
+        else:
+            forward_message += 'The bot'
+
+        forward_message += " this message as possibly containing violence:\n" 
         forward_message += "```" + self.offending_message.author + ": " + self.offending_message.content + "```\n"
-        forward_message += "They rated the treat level as "
-        forward_message += "**not imminent**\n" if self.threat_level == ThreatLevel.NON_IMMINENT else "**imminent**\n"
+        if self.threat_level != ThreatLevel.AUTO_REPORT:
+            forward_message += "They rated the treat level as "
+            forward_message += "**not imminent**\n" if self.threat_level == ThreatLevel.NON_IMMINENT else "**imminent**\n"
         forward_message += "React with :thumbsdown: if the message is not a threat, :exclamation: if it is a threat but *not* imminent, and :bangbang: if it *is* imminent"
         self.state = ModState.AWAITING_REACT
         return [forward_message]
