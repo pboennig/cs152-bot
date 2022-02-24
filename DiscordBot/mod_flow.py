@@ -1,4 +1,5 @@
 from enum import Enum, auto
+from re import S
 import discord
 import emoji
 
@@ -70,7 +71,7 @@ class Incident:
                     return await self.send_self_help_message()
                 else:
                     response = await self.ban_user()
-                    await self.offending_message.delete()
+                    await self.delete_message(send_message=False) 
                     return response + ['Please contact the relevant authorities. Closing the incident.']
 
         elif self.state == ModState.NONIMMINENT_THREAT:
@@ -90,11 +91,11 @@ class Incident:
                 self.state = react_state_update[(react, self.state)]
                 if react == ':thumbs_up:':
                     response = await self.ban_user()
-                    await self.offending_message.delete()
+                    await self.delete_message(send_message=False)
                     return response
                 else:
                     response = 'Thank you, we are closing the incident.'
-                    await self.offending_message.delete()
+                    await self.delete_message() 
                     return [response]
 
 
@@ -104,6 +105,15 @@ class Incident:
             return [f'{self.incident_prefix}Incident is already closed.']
             
         return []
+
+    async def delete_message(self, send_message=True):
+        if send_message:
+            msg = "Our moderators believe that the below message violates our policies against promoting or glorifying violence:"
+            msg += "```" + self.offending_message.author.name + ": " + self.offending_message.content + "```\n"
+            msg += "We are therefore removing it from the platform."
+            channel = await self.offending_message.author.create_dm()
+            await channel.send(msg)
+        await self.offending_message.delete()
 
     async def ban_user(self):
         msg = "Our moderators believe that this message violates our policies around threatening, promoting, or glorifying violence"
