@@ -2,7 +2,7 @@ from enum import Enum, auto
 import discord
 import emoji
 
-from report import ReportedMessage, ThreatLevel
+from report import ThreatLevel
 
 class ModState(Enum):
     FLOW_START = auto()
@@ -22,7 +22,7 @@ react_state_update: dict[(str, ModState), ModState] = {
 }
 
 class Incident:
-    def __init__(self, client, incident_num, reporter, offending_message: ReportedMessage, threat_level: ThreatLevel):
+    def __init__(self, client, incident_num, reporter, offending_message: discord.Message, threat_level: ThreatLevel):
         self.state = ModState.FLOW_START
         self.reporter = reporter
         self.incident_prefix = f"**[INCIDENT {incident_num}]**\n"
@@ -63,7 +63,9 @@ class Incident:
             if react == ':thumbs_up:':
                 return await self.send_self_help_message()
             elif react == ':thumbs_down:':
-                return [f'Please remove the content, ban the user, and contact the relevant authorities']
+                response = await self.ban_user()
+                await self.offending_message.delete()
+                return response + ['\nPlease contact the relevant authorities.']
 
         elif self.state == ModState.NONIMMINENT_THREAT:
             if react == ':thumbs_up:':
@@ -77,6 +79,14 @@ class Incident:
             return [f'{self.incident_prefix}Incident is already closed.']
             
         return []
+
+    async def ban_user(self):
+        msg = "Our moderators believe that this message violates our policies around threatening, promoting, or glorifying violence"
+        msg += "```" + self.offending_message.author.name + ": " + self.offending_message.content + "```\n"
+        msg += "We are therefore banning you from the platform." 
+        channel = await self.offending_message.author.create_dm()
+        await channel.send(msg)
+        return [f'{self.incident_prefix} @{self.offending_message.author.name} is now banned.']
 
     async def send_self_help_message(self):
         msg = "Hi there! We're worried about the message you sent:\n"

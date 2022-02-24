@@ -7,7 +7,7 @@ import logging
 import re
 import requests
 from mod_flow import Incident
-from report import Report, ThreatLevel, ReportedMessage
+from report import Report, ThreatLevel 
 
 # Set up logging to the console
 logger = logging.getLogger('discord')
@@ -132,8 +132,7 @@ class ModBot(discord.Client):
 
         evaluation = self.eval_text(message)
         if evaluation['THREAT'] > .6:
-            reported_message = ReportedMessage(message.author, message.content)
-            i = Incident(self, self.incident_count, None, reported_message, ThreatLevel.AUTO_REPORT)
+            i = Incident(self, self.incident_count, None, message, ThreatLevel.AUTO_REPORT)
             self.incident_map[self.incident_count] = i
             self.incident_count += 1
             responses = await i.handle_message()

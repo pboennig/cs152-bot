@@ -22,12 +22,6 @@ class ReportType(Enum):
     INAPPROPIATE = 'inappropiate'
     HARM = 'harm'
 
-@dataclass
-class ReportedMessage:
-    author: discord.Member 
-    content: str
-
-
 class Report:
     START_KEYWORD = "report"
     CANCEL_KEYWORD = "cancel"
@@ -77,7 +71,7 @@ class Report:
             # Here we've found the message - it's up to you to decide what to do next!
             self.state = State.MESSAGE_IDENTIFIED
 
-            self.message = ReportedMessage(message.author, message.content)
+            self.message = message 
 
             reply = "I found this message:" + "```" + message.author.name + ": " + message.content + "```\n"
             reply += "What do you think is wrong with this message?\n\n"
