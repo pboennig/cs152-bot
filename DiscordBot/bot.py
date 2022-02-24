@@ -6,6 +6,7 @@ import json
 import logging
 import re
 import requests
+from handle_image import get_text_from_attachment
 from mod_flow import Incident
 from report import Report, ThreatLevel 
 
@@ -133,20 +134,25 @@ class ModBot(discord.Client):
                         await mod_channel.send(response)
             self.reports.pop(author_id)
 
-    async def handle_channel_message(self, message):
+    async def handle_channel_message(self, message: discord.Message):
         # Only handle messages sent in the "group-#" channel
         if not message.channel.name == f'group-{self.group_num}':
             return
 
-        evaluation = self.eval_text(message)
-        if evaluation['THREAT'] > .6:
-            i = Incident(self, self.incident_count, None, message, ThreatLevel.AUTO_REPORT)
-            self.incident_map[self.incident_count] = i
-            self.incident_count += 1
-            responses = await i.handle_message()
-            for mod_channel in self.mod_channels.values():
-                for response in responses:
-                    await mod_channel.send(response)
+        for attachment in message.attachments:
+            message.content += get_text_from_attachment(attachment)
+
+        if len(message.content) > 0:
+            evaluation = self.eval_text(message)
+            if evaluation['THREAT'] > .6:
+                i = Incident(self, self.incident_count, None, message, ThreatLevel.AUTO_REPORT)
+                self.incident_map[self.incident_count] = i
+                self.incident_count += 1
+                responses = await i.handle_message()
+                for mod_channel in self.mod_channels.values():
+                    for response in responses:
+                        await mod_channel.send(response)
+
 
     def eval_text(self, message):
         '''
