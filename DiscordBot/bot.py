@@ -72,10 +72,20 @@ class ModBot(discord.Client):
         else:
             await self.handle_dm(message)
 
-    async def on_raw_reaction_add(self, payload):
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if payload.guild_id:
+            if payload.guild_id in self.mod_channels:
+                channel = self.mod_channels[payload.guild_id]
+                message: discord.Message = await channel.fetch_message(payload.message_id)
+                if message.author.id == self.user.id:
+                    # only respond to reactions on our own message in the mod channel
+                    m = re.match(r"\*\*\[INCIDENT (\d*)\]\*\*", message.content)
+                    if m is not None:
+                        i = self.incident_map[int(m.group(1))]
+                        responses = await i.handle_emoji(payload.emoji)
+                        for r in responses:
+                            await channel.send(r)
             # only care about reactions on messages that aren't DM
-            print(payload)
 
     async def handle_dm(self, message):
         # Handle a help message
