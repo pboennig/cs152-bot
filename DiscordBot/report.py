@@ -24,7 +24,7 @@ class ReportType(Enum):
 
 @dataclass
 class ReportedMessage:
-    author: str
+    author: discord.Member 
     content: str
 
 
@@ -39,7 +39,7 @@ class Report:
         self.message = None
         self.threat_level = ThreatLevel.NOT_HARM
     
-    async def handle_message(self, message):
+    async def handle_message(self, message: discord.Message):
         '''
         This function makes up the meat of the user-side reporting flow. It defines how we transition between states and what 
         prompts to offer at each of those states. You're welcome to change anything you want; this skeleton is just here to
@@ -77,7 +77,7 @@ class Report:
             # Here we've found the message - it's up to you to decide what to do next!
             self.state = State.MESSAGE_IDENTIFIED
 
-            self.message = ReportedMessage(message.author.name, message.content)
+            self.message = ReportedMessage(message.author, message.content)
 
             reply = "I found this message:" + "```" + message.author.name + ": " + message.content + "```\n"
             reply += "What do you think is wrong with this message?\n\n"

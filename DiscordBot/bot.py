@@ -132,7 +132,7 @@ class ModBot(discord.Client):
 
         evaluation = self.eval_text(message)
         if evaluation['THREAT'] > .6:
-            reported_message = ReportedMessage(message.author.name, message.content)
+            reported_message = ReportedMessage(message.author, message.content)
             i = Incident(self, self.incident_count, None, reported_message, ThreatLevel.AUTO_REPORT)
             self.incident_map[self.incident_count] = i
             self.incident_count += 1
@@ -140,8 +140,6 @@ class ModBot(discord.Client):
             for mod_channel in self.mod_channels.values():
                 for response in responses:
                     await mod_channel.send(response)
-
-
 
     def eval_text(self, message):
         '''
