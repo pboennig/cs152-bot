@@ -7,15 +7,18 @@ from report import ReportedMessage, ThreatLevel
 class ModState(Enum):
     FLOW_START = auto()
     AWAITING_REACT = auto()
+    IMMINENT_THREAT = auto()
     NONIMMINENT_THREAT = auto()
     REPORT_COMPLETE = auto()
 
 react_state_update: dict[(str, ModState), ModState] = {
-    (':double_exclamation_mark:', ModState.AWAITING_REACT) : ModState.REPORT_COMPLETE,
+    (':double_exclamation_mark:', ModState.AWAITING_REACT) : ModState.IMMINENT_THREAT,
     (':red_exclamation_mark:', ModState.AWAITING_REACT) : ModState.NONIMMINENT_THREAT,
     (':thumbs_down:', ModState.AWAITING_REACT) : ModState.REPORT_COMPLETE,
     (':thumbs_up:', ModState.NONIMMINENT_THREAT) : ModState.REPORT_COMPLETE,
-    (':thumbs_down:', ModState.NONIMMINENT_THREAT) : ModState.REPORT_COMPLETE
+    (':thumbs_down:', ModState.NONIMMINENT_THREAT) : ModState.REPORT_COMPLETE,
+    (':thumbs_up:', ModState.IMMINENT_THREAT) : ModState.REPORT_COMPLETE,
+    (':thumbs_down:', ModState.IMMINENT_THREAT) : ModState.REPORT_COMPLETE
 }
 
 class Incident:
@@ -54,9 +57,15 @@ class Incident:
             if react == ':red_exclamation_mark:':
                 return [f"{self.incident_prefix}Are they a threat to themselves? Reply :thumbsup: if yes and :thumbsdown: if not"]
             elif react == ':double_exclamation_mark:':
-                return [f'{self.incident_prefix}Please remove the content, ban the user, and contact authorities. This incident is closed.']
+                return [f"{self.incident_prefix}Are they a threat to themselves? Reply :thumbsup: if yes and :thumbsdown: if not"]
             elif react == ':thumbs_down:':
                 return [f'{self.incident_prefix}Thank you, incident closed.']
+
+        elif self.state == ModState.IMMINENT_THREAT:
+            if react == ':thumbs_up:':
+                return [f'{self.incident_prefix}Please reach out to @{self.offending_message.author} with supportive resources.']
+            elif react == ':thumbs_down:':
+                return [f'Please remove the content, ban the user, and contact the relevant authorities']
 
         elif self.state == ModState.NONIMMINENT_THREAT:
             if react == ':thumbs_up:':
