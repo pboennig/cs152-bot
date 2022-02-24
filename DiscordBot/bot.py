@@ -72,6 +72,14 @@ class ModBot(discord.Client):
         else:
             await self.handle_dm(message)
 
+    async def on_message_edit(self, before, after):
+        # Ignore messages from the bot 
+        if after.author.id == self.user.id:
+            return
+
+        if after.guild:
+            await self.handle_channel_message(after)
+
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if payload.guild_id:
             if payload.guild_id in self.mod_channels:
