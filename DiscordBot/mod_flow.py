@@ -12,8 +12,10 @@ class ModState(Enum):
 
 react_state_update: dict[(str, ModState), ModState] = {
     (':double_exclamation_mark:', ModState.AWAITING_REACT) : ModState.REPORT_COMPLETE,
-    (':exclamation_mark:', ModState.AWAITING_REACT) : ModState.NONIMMINENT_THREAT,
-    (':thumbsdown:', ModState.AWAITING_REACT) : ModState.REPORT_COMPLETE
+    (':red_exclamation_mark:', ModState.AWAITING_REACT) : ModState.NONIMMINENT_THREAT,
+    (':thumbs_down:', ModState.AWAITING_REACT) : ModState.REPORT_COMPLETE,
+    (':thumbs_up:', ModState.NONIMMINENT_THREAT) : ModState.REPORT_COMPLETE,
+    (':thumbs_down:', ModState.NONIMMINENT_THREAT) : ModState.REPORT_COMPLETE
 }
 
 class Incident:
@@ -38,7 +40,6 @@ class Incident:
 
     async def handle_emoji(self, react_emoji: discord.PartialEmoji):
         react = emoji.demojize(react_emoji.name)
-        print(react)
         if self.state == ModState.AWAITING_REACT:
             if (react, self.state) in react_state_update:
                 self.state = react_state_update[(react, self.state)]
@@ -46,9 +47,20 @@ class Incident:
             if react == ':red_exclamation_mark:':
                 return [f"{self.incident_prefix}Are they a threat to themselves? Reply :thumbsup: if yes and :thumbsdown: if not"]
             elif react == ':double_exclamation_mark:':
-                return [f'{self.incident_prefix}Please remove the content, ban the user, and contact authorities']
+                return [f'{self.incident_prefix}Please remove the content, ban the user, and contact authorities. This incident is closed.']
             elif react == ':thumbs_down:':
                 return [f'{self.incident_prefix}Thank you, incident closed.']
+
+        elif self.state == ModState.NONIMMINENT_THREAT:
+            if react == ':thumbs_up:':
+                return [f'{self.incident_prefix}Please reach out to @{self.offending_message.author} with supportive resources.']
+            elif react == ':thumbs_down:':
+                return [f'Please remove the content. Ban the user if it incites violence or the user has repeatedly glorified violence']
+        
+
+        elif self.state == ModState.REPORT_COMPLETE:
+            # If the incident is already closed, don't change anything
+            return [f'{self.incident_prefix}Incident is already closed.']
             
         return []
         
