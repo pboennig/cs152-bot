@@ -1,5 +1,4 @@
 from enum import Enum, auto
-from re import S
 import discord
 import emoji
 
@@ -13,7 +12,7 @@ class ModState(Enum):
     ASK_IF_SHOULD_BAN = auto()
     REPORT_COMPLETE = auto()
 
-react_state_update: dict[(str, ModState), ModState] = {
+react_state_update = {
     (':double_exclamation_mark:', ModState.AWAITING_REACT) : ModState.IMMINENT_THREAT,
     (':red_exclamation_mark:', ModState.AWAITING_REACT) : ModState.NONIMMINENT_THREAT,
     (':thumbs_down:', ModState.AWAITING_REACT) : ModState.REPORT_COMPLETE,
@@ -41,9 +40,9 @@ class Incident:
         if self.reporter is not None:
             forward_message += self.reporter.name 
         else:
-            forward_message += 'The bot'
+            forward_message += 'The Perspective API'
 
-        forward_message += " this message as possibly containing violence:\n" 
+        forward_message += " reported this message as possibly containing violence:\n" 
         forward_message += "```" + self.offending_message.author.name + ": " + self.offending_message.content + "```\n"
         if self.threat_level != ThreatLevel.AUTO_REPORT:
             forward_message += "They rated the treat level as "
