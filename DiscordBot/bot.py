@@ -9,6 +9,8 @@ import requests
 from handle_image import get_text_from_attachment
 from mod_flow import Incident
 from report import Report, ThreatLevel 
+from transformers import pipeline
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 # Set up logging to the console
 logger = logging.getLogger('discord')
@@ -38,6 +40,14 @@ class ModBot(discord.Client):
         self.incident_count = 0
         self.incident_map: Dict[int, Incident] = {}
         self.perspective_key = key
+        #Loads the model from the folder 'best_model'
+        first_model = AutoModelForSequenceClassification.from_pretrained('best_model', num_labels=2)
+        tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
+        # Makes the model easy to use:
+        # Usage: nlp(string or strings to classify)
+        # Output = [{'labels': "LABEL_1", 'score': probability} for string in input]
+        # Violent Content = LABEL_1, Non-Violent = LABEL_0
+        self.nlp = pipeline("sentiment-analysis",model=first_model, tokenizer=tokenizer)
 
     async def on_ready(self):
         print(f'{self.user.name} has connected to Discord! It is these guilds:')
@@ -143,8 +153,7 @@ class ModBot(discord.Client):
             message.content += get_text_from_attachment(attachment)
 
         if len(message.content) > 0:
-            evaluation = self.eval_text(message)
-            if evaluation['THREAT'] > .6:
+            if self.eval_text(message):
                 i = Incident(self, self.incident_count, None, message, ThreatLevel.AUTO_REPORT)
                 self.incident_map[self.incident_count] = i
                 self.incident_count += 1
@@ -154,31 +163,11 @@ class ModBot(discord.Client):
                         await mod_channel.send(response)
 
 
-    def eval_text(self, message):
+    def eval_text(self, message: discord.Message) -> bool:
         '''
-        Given a message, forwards the message to Perspective and returns a dictionary of scores.
+        Given a message, forwards the message to our classifier and returns true if violent. 
         '''
-        PERSPECTIVE_URL = 'https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze'
-
-        url = PERSPECTIVE_URL + '?key=' + self.perspective_key
-        data_dict = {
-            'comment': {'text': message.content},
-            'languages': ['en'],
-            'requestedAttributes': {
-                                    'SEVERE_TOXICITY': {}, 'PROFANITY': {},
-                                    'IDENTITY_ATTACK': {}, 'THREAT': {},
-                                    'TOXICITY': {}, 'FLIRTATION': {}
-                                },
-            'doNotStore': True
-        }
-        response = requests.post(url, data=json.dumps(data_dict))
-        response_dict = response.json()
-
-        scores = {}
-        for attr in response_dict["attributeScores"]:
-            scores[attr] = response_dict["attributeScores"][attr]["summaryScore"]["value"]
-
-        return scores
+        return self.nlp(message.content)[0]['labels'] == 'LABEL_1'
 
     def code_format(self, text):
         return "```" + text + "```"
