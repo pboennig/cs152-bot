@@ -167,7 +167,7 @@ class ModBot(discord.Client):
         '''
         Given a message, forwards the message to our classifier and returns true if violent. 
         '''
-        return self.nlp(message.content)[0]['labels'] == 'LABEL_1'
+        return self.nlp(message.content)[0]['label'] == 'LABEL_1'
 
     def code_format(self, text):
         return "```" + text + "```"
