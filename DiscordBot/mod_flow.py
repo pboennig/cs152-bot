@@ -40,7 +40,7 @@ class Incident:
         if self.reporter is not None:
             forward_message += self.reporter.name 
         else:
-            forward_message += 'The Perspective API'
+            forward_message += 'Our classifier '
 
         forward_message += " reported this message as possibly containing violence:\n" 
         forward_message += "```" + self.offending_message.author.name + ": " + self.offending_message.content + "```\n"
