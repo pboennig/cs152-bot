@@ -40,6 +40,7 @@ class ModBot(discord.Client):
         self.incident_count = 0
         self.incident_map: Dict[int, Incident] = {}
         self.perspective_key = key
+        self.context = []
         #Loads the model from the folder 'best_model'
         first_model = AutoModelForSequenceClassification.from_pretrained('best_model', num_labels=2)
         tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
@@ -80,6 +81,9 @@ class ModBot(discord.Client):
         # Check if this message was sent in a server ("guild") or if it's a DM
         if message.guild:
             await self.handle_channel_message(message)
+            if len(self.context) > 4:
+                self.context.pop(0)
+            self.context.append(message)
         else:
             await self.handle_dm(message)
 

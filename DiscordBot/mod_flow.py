@@ -25,13 +25,14 @@ react_state_update = {
 }
 
 class Incident:
-    def __init__(self, client, incident_num, reporter, offending_message: discord.Message, threat_level: ThreatLevel):
+    def __init__(self, client, incident_num, reporter, offending_message: discord.Message, threat_level: ThreatLevel, context: list):
         self.state = ModState.FLOW_START
         self.reporter = reporter
         self.incident_prefix = f"**[INCIDENT {incident_num}]**\n"
         self.client = client
         self.offending_message = offending_message
         self.threat_level = threat_level 
+        self.context = context
     
     async def handle_message(self):
         assert self.state == ModState.FLOW_START
@@ -43,6 +44,12 @@ class Incident:
             forward_message += 'Our classifier '
 
         forward_message += " reported this message as possibly containing violence:\n" 
+
+        forward_message += "```"
+        for message in self.context:
+            forward_message +=  message.author.name + ": " + self.offending_message.content
+        forward_message += "```\n"
+
         forward_message += "```" + self.offending_message.author.name + ": " + self.offending_message.content + "```\n"
         if self.threat_level != ThreatLevel.AUTO_REPORT:
             forward_message += "They rated the treat level as "
